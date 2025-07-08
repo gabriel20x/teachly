@@ -1,48 +1,29 @@
-import { useEffect } from "react";
+import { AuthProvider } from "./providers/AuthProvider";
+import { UserProfile } from "./components/UserProfile";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    google: any;
-  }
-}
-
-function App() {
-  useEffect(() => {
-    window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
-    });
-
-    window.google.accounts.id.renderButton(
-      document.getElementById("google-signin")!,
-      { theme: "outline", size: "large" }
-    );
-  }, []);
-
-  const handleCredentialResponse = async (response: { credential: string }) => {
-    const credential = response.credential;
-    console.log("Google ID Token:", credential);
-
-    try {
-      const res = await fetch("http://localhost:8000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential }),
-      });
-
-      const user = await res.json();
-      console.log("User from backend:", user);
-    } catch (err) {
-      console.error("Login failed", err);
-    }
-  };
-
+function AppContent() {
   return (
     <div style={{ padding: "2rem" }}>
       <h1>Teachly Chat App</h1>
-      <div id="google-signin"></div>
+      <ProtectedRoute>
+        <div style={{ marginTop: '2rem' }}>
+          <UserProfile />
+          <div style={{ marginTop: '2rem' }}>
+            <h2>Welcome to your dashboard!</h2>
+            <p>This content is only visible to authenticated users.</p>
+          </div>
+        </div>
+      </ProtectedRoute>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
