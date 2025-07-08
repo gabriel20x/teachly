@@ -1,11 +1,13 @@
 import { AuthProvider } from "./providers/AuthProvider";
 import { UserProfile } from "./components/UserProfile";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import ChatTest from "./components/ChatTest";
 
 function AppContent() {
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Teachly Chat App</h1>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+      <div>
+        <h1>Teachly Chat App</h1>
       <ProtectedRoute>
         <div style={{ marginTop: '2rem' }}>
           <UserProfile />
@@ -14,7 +16,16 @@ function AppContent() {
             <p>This content is only visible to authenticated users.</p>
           </div>
         </div>
+        <ChatTest
+          userId={"1"}
+          toId={"2"}
+        />
+        <ChatTest
+          userId={"2"}
+          toId={"1"}
+        />
       </ProtectedRoute>
+      </div>
     </div>
   );
 }
