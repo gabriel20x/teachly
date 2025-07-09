@@ -111,6 +111,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
         
         switch (data.event) {
           case 'new_message':
+            console.log('New message:', data);
             onMessageRef.current?.(data as unknown as ChatMessage);
             break;
             
