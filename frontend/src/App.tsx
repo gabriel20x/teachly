@@ -1,30 +1,27 @@
 import { AuthProvider } from "./providers/AuthProvider";
 import { UserProfile } from "./components/UserProfile";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import ChatTest from "./components/ChatTest";
+import { WebSocketWrapper } from "./components/WebSocketWrapper";
 
 function AppContent() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-      <div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
+      <div style={{ width: '100%', maxWidth: '1200px' }}>
         <h1>Teachly Chat App</h1>
-      <ProtectedRoute>
-        <div style={{ marginTop: '2rem' }}>
-          <UserProfile />
+        <ProtectedRoute>
           <div style={{ marginTop: '2rem' }}>
-            <h2>Welcome to your dashboard!</h2>
-            <p>This content is only visible to authenticated users.</p>
+            <UserProfile />
+            <div style={{ marginTop: '2rem' }}>
+              <h2>Welcome to your dashboard!</h2>
+              <p>This content is only visible to authenticated users.</p>
+            </div>
           </div>
-        </div>
-        <ChatTest
-          userId={"1"}
-          toId={"2"}
-        />
-        <ChatTest
-          userId={"2"}
-          toId={"1"}
-        />
-      </ProtectedRoute>
+          
+          {/* WebSocket Wrapper with Connected Users */}
+          <div style={{ marginTop: '2rem' }}>
+            <WebSocketWrapper />
+          </div>
+        </ProtectedRoute>
       </div>
     </div>
   );

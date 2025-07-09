@@ -16,7 +16,8 @@ export const UserProfile: React.FC = () => {
       padding: '1rem',
       border: '1px solid #e0e0e0',
       borderRadius: '8px',
-      backgroundColor: '#f9f9f9'
+      backgroundColor: '#f9f9f9',
+      color: 'black'
     }}>
       <img 
         src={user.avatar_url} 
