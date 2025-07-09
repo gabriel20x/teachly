@@ -3,6 +3,8 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from app.db.database import Base
+from sqlalchemy.sql import func
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -11,7 +13,7 @@ class Message(Base):
     from_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     to_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
     sender = relationship("User", foreign_keys=[from_id])
     receiver = relationship("User", foreign_keys=[to_id])

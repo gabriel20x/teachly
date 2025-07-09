@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: postgres
+    type: postgres
+    access: proxy
+    url: db:5432
+    user: postgres
+    secureJsonData:
+      password: postgres
+    database: chatdb
+    isDefault: true
+    editable: true
+    jsonData:
+      sslmode: "disable"

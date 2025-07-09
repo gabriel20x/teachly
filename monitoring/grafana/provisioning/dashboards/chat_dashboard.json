@@ -1,0 +1,38 @@
+{
+    "annotations": { "list": [] },
+    "panels": [
+      {
+        "type": "timeseries",
+        "title": "Messages by Day",
+        "targets": [
+          {
+            "rawSql": "SELECT timestamp as \"time\", COUNT(*) as \"messages\" FROM messages GROUP BY 1 ORDER BY 1",
+            "format": "time_series",
+            "refId": "A"
+          }
+        ],
+        "datasource": { "type": "postgres", "uid": "postgres" },
+        "fieldConfig": { "defaults": {}, "overrides": [] },
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 }
+      },
+      {
+        "type": "table",
+        "title": "Messages by User",
+        "targets": [
+          {
+            "rawSql": "SELECT from_id as \"User\", COUNT(*) as \"Messages\" FROM messages GROUP BY from_id ORDER BY COUNT(*) DESC",
+            "format": "table",
+            "refId": "B"
+          }
+        ],
+        "datasource": { "type": "postgres", "uid": "postgres" },
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 }
+      }
+    ],
+    "schemaVersion": 30,
+    "version": 1,
+    "title": "Chat Overview",
+    "uid": "chat-overview",
+    "time": { "from": "now-30d", "to": "now" }
+  }
+  
