@@ -1,11 +1,15 @@
+import { renderSafeMessage } from "../../utils/messageSecurity";
+
 interface ReceivedMessageBubbleProps {
   message: string;
   time: string;
+  onLinkClick?: (url: string, isExternal: boolean) => void;
 }
 
 export const ReceivedMessageBubble = ({
   message,
   time,
+  onLinkClick,
 }: ReceivedMessageBubbleProps) => {
   return (
     <div
@@ -23,9 +27,12 @@ export const ReceivedMessageBubble = ({
           padding: "1rem 1.4rem",
           maxWidth: "70%",
           border: "1px solid var(--border-light)",
+          position: "relative",
         }}
       >
-        <p className="text-base">{message}</p>
+        <div className="text-base">
+          {onLinkClick ? renderSafeMessage(message, onLinkClick) : message}
+        </div>
         <div style={{ marginTop: "0.4rem" }}>
           <span
             className="text-small text-muted"

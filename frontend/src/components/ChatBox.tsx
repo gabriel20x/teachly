@@ -1,9 +1,10 @@
 import { useWebSocketContext } from "../hooks/useWebSocketContext";
 import { useAuth } from "../hooks/useAuth";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { SentMessageBubble } from "./chat/SentMessageBubble";
 import { ReceivedMessageBubble } from "./chat/ReceivedMessageBubble";
 import { Avatar } from "./Avatar";
+import { LinkWarningModal } from "./LinkWarningModal";
 
 export const ChatBox = () => {
   const { user } = useAuth();
@@ -24,6 +25,10 @@ export const ChatBox = () => {
   } = useWebSocketContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [linkWarningModal, setLinkWarningModal] = useState<{
+    isOpen: boolean;
+    url: string;
+  }>({ isOpen: false, url: "" });
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +58,25 @@ export const ChatBox = () => {
       }
     }
   }, [selectedChatUser, setNewMessage, sendTyping, isCurrentlyTyping]);
+
+  const handleLinkClick = (url: string, isExternal: boolean) => {
+    if (isExternal) {
+      // Show warning modal for external links
+      setLinkWarningModal({ isOpen: true, url });
+    } else {
+      // Direct navigation for internal links
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleLinkWarningClose = () => {
+    setLinkWarningModal({ isOpen: false, url: "" });
+  };
+
+  const handleLinkWarningConfirm = () => {
+    window.open(linkWarningModal.url, '_blank', 'noopener,noreferrer');
+    setLinkWarningModal({ isOpen: false, url: "" });
+  };
 
   // Mark messages as seen when chat is opened or new messages arrive
   useEffect(() => {
@@ -134,12 +158,14 @@ export const ChatBox = () => {
                     ? "delivered"
                     : "pending"
                 }
+                onLinkClick={handleLinkClick}
               />
             ) : (
               <ReceivedMessageBubble
                 key={message.id}
                 message={message.message}
                 time={message.timestamp}
+                onLinkClick={handleLinkClick}
               />
             )
           )}
@@ -206,6 +232,14 @@ export const ChatBox = () => {
           </button>
         </form>
       </div>
+
+      {/* Link Warning Modal */}
+      <LinkWarningModal
+        isOpen={linkWarningModal.isOpen}
+        url={linkWarningModal.url}
+        onClose={handleLinkWarningClose}
+        onConfirm={handleLinkWarningConfirm}
+      />
     </div>
   );
 };
