@@ -66,7 +66,22 @@ async def chat(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)
                         {
                             "event": "message_delivered",
                             "message_id": new_msg.id,
+                            "timestamp": new_msg.timestamp.isoformat(),
                             "delivered_at": new_msg.delivered_at.isoformat(),
+                        }
+                    ),
+                    user_id,
+                )
+
+                # Send confirmation to sender with server timestamp
+                await manager.send_personal_message(
+                    json.dumps(
+                        {
+                            "event": "message_sent",
+                            "message_id": new_msg.id,
+                            "to": to_id,
+                            "message": content,
+                            "timestamp": new_msg.timestamp.isoformat(),
                         }
                     ),
                     user_id,

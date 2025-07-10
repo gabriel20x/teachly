@@ -42,6 +42,14 @@ export interface UserConnectionEvent {
   connected_users: ConnectedUser[];
 }
 
+export interface MessageSentEvent {
+  event: 'message_sent';
+  message_id: number;
+  to: string;
+  message: string;
+  timestamp: string;
+}
+
 export interface UseWebSocketReturn {
   // Connection state
   isConnected: boolean;
@@ -67,6 +75,7 @@ export interface UseWebSocketReturn {
   onUserConnect?: (event: UserConnectionEvent) => void;
   onUserDisconnect?: (event: UserConnectionEvent) => void;
   onConnectedUsersUpdate?: (users: ConnectedUser[]) => void;
+  onMessageSent?: (event: MessageSentEvent) => void;
 }
 
 export const useWebSocket = (): UseWebSocketReturn => {
@@ -85,6 +94,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
   const onUserConnectRef = useRef<((event: UserConnectionEvent) => void) | undefined>(undefined);
   const onUserDisconnectRef = useRef<((event: UserConnectionEvent) => void) | undefined>(undefined);
   const onConnectedUsersUpdateRef = useRef<((users: ConnectedUser[]) => void) | undefined>(undefined);
+  const onMessageSentRef = useRef<((event: MessageSentEvent) => void) | undefined>(undefined);
 
   const connect = useCallback((userId: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -113,6 +123,11 @@ export const useWebSocket = (): UseWebSocketReturn => {
           case 'new_message':
             console.log('New message:', data);
             onMessageRef.current?.(data as unknown as ChatMessage);
+            break;
+            
+          case 'message_sent':
+            console.log('Message sent:', data);
+            onMessageSentRef.current?.(data as unknown as MessageSentEvent);
             break;
             
           case 'typing':
@@ -251,6 +266,9 @@ export const useWebSocket = (): UseWebSocketReturn => {
     set onUserDisconnect(handler) { onUserDisconnectRef.current = handler; },
     
     get onConnectedUsersUpdate() { return onConnectedUsersUpdateRef.current; },
-    set onConnectedUsersUpdate(handler) { onConnectedUsersUpdateRef.current = handler; }
+    set onConnectedUsersUpdate(handler) { onConnectedUsersUpdateRef.current = handler; },
+    
+    get onMessageSent() { return onMessageSentRef.current; },
+    set onMessageSent(handler) { onMessageSentRef.current = handler; }
   };
 }; 

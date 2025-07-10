@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { useWebSocket } from "../hooks/useWebSocket";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useWebSocket } from "../hooks/useWebSocket";
+import type { ChatMessage, MessageSentEvent } from "../hooks/useWebSocket";
 
 interface WebSocketWrapperProps {
   children?: React.ReactNode;
@@ -10,13 +11,21 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
   children,
 }) => {
   const { user } = useAuth();
+  const webSocketHook = useWebSocket();
   const [selectedChatUser, setSelectedChatUser] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<
-    Array<{ from: string; message: string; timestamp: string }>
+    Array<{
+      id: number;
+      from: number;
+      to: number;
+      message: string;
+      timestamp: string;
+    }>
   >([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const webSocketHook = useWebSocket();
   const {
     isConnected,
     isConnecting,
@@ -36,46 +45,80 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
   }, [user, connect]);
 
   // Handle incoming messages
-  const handleMessage = useCallback(
-    (message: { from: string; message: string; timestamp: string }) => {
-      console.log("Received message:", message);
+  const handleMessage = useCallback( (message: ChatMessage) => {
+    console.log("Received message:", message);
+    if (message.from === selectedChatUser || message.from === user?.id.toString()) {
       setChatMessages((prev) => [
         ...prev,
         {
-          from: message.from,
+          id: message.message_id,
+          from: parseInt(message.from),
+          to: parseInt(selectedChatUser || "0"),
           message: message.message,
           timestamp: message.timestamp,
         },
       ]);
-    },
-    []
-  );
+    }
+  }, [selectedChatUser, user?.id]);
+
+  const handleMessageSent = useCallback( (event: MessageSentEvent) => {
+    console.log("Message sent confirmed:", event);
+    // Add the sent message to chat with server timestamp
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: event.message_id,
+        from: user?.id || 0,
+        to: parseInt(event.to),
+        message: event.message,
+        timestamp: event.timestamp,
+      },
+    ]);
+  }, [user?.id]);
 
   // Set up the message handler
   useEffect(() => {
     webSocketHook.onMessage = handleMessage;
+    webSocketHook.onMessageSent = handleMessageSent;
 
     return () => {
       webSocketHook.onMessage = undefined;
     };
-  }, [webSocketHook, handleMessage]);
+  }, [webSocketHook, handleMessage, handleMessageSent]);
 
-  const handleUserClick = (userId: string) => {
+  const handleUserClick = async (userId: string) => {
     setSelectedChatUser(userId);
     setChatMessages([]);
+    setIsLoadingHistory(true);
+    
+    // Load chat history
+    if (user?.id) {
+      try {
+        const response = await fetch(
+          `http://localhost:8000/history/${user.id}/${userId}`
+        );
+        if (response.ok) {
+          const history = await response.json();
+          setChatMessages(history.map((msg: {id: number, from: number, to: number, message: string, timestamp: string}) => ({
+            id: msg.id,
+            from: msg.from,
+            to: msg.to,
+            message: msg.message,
+            timestamp: msg.timestamp,
+          })));
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    }
   };
 
   const handleSendMessage = () => {
     if (selectedChatUser && newMessage.trim()) {
       sendMessage(selectedChatUser, newMessage.trim());
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          from: user?.id?.toString() || "",
-          message: newMessage.trim(),
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      console.log("time", new Date().toISOString());
       setNewMessage("");
     }
   };
@@ -91,6 +134,15 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
     setSelectedChatUser(null);
     setChatMessages([]);
   };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
 
   if (!user) {
     return <div>Please log in to use the chat</div>;
@@ -309,23 +361,33 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
               gap: "10px",
             }}
           >
-            {chatMessages.length === 0 ? (
-              <p
-                style={{
-                  textAlign: "center",
-                  color: "#666",
-                  marginTop: "20px",
-                }}
-              >
-                Start a conversation!
-              </p>
-            ) : (
+                         {isLoadingHistory ? (
+               <p
+                 style={{
+                   textAlign: "center",
+                   color: "#666",
+                   marginTop: "20px",
+                 }}
+               >
+                 Loading chat history...
+               </p>
+             ) : chatMessages.length === 0 ? (
+               <p
+                 style={{
+                   textAlign: "center",
+                   color: "#666",
+                   marginTop: "20px",
+                 }}
+               >
+                 Start a conversation!
+               </p>
+             ) : (
               chatMessages.map((msg, index) => (
                 <div
                   key={index}
                   style={{
                     alignSelf:
-                      msg.from === user?.id?.toString()
+                      msg.from === user?.id
                         ? "flex-end"
                         : "flex-start",
                     maxWidth: "70%",
@@ -336,11 +398,11 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
                       padding: "10px 15px",
                       borderRadius: "15px",
                       backgroundColor:
-                        msg.from === user?.id?.toString()
+                        msg.from === user?.id
                           ? "#2196F3"
                           : "#f1f1f1",
                       color:
-                        msg.from === user?.id?.toString() ? "white" : "black",
+                        msg.from === user?.id ? "white" : "black",
                       wordWrap: "break-word",
                     }}
                   >
@@ -352,15 +414,16 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
                       color: "#666",
                       marginTop: "5px",
                       textAlign:
-                        msg.from === user?.id?.toString() ? "right" : "left",
+                        msg.from === user?.id ? "right" : "left",
                     }}
                   >
-                    {new Date(msg.timestamp).toLocaleTimeString()}
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+               ))
+             )}
+             <div ref={messagesEndRef} />
+           </div>
 
           {/* Message Input */}
           <div
