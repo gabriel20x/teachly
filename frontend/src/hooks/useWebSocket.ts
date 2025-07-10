@@ -50,6 +50,19 @@ export interface MessageSentEvent {
   timestamp: string;
 }
 
+export interface MessageDeliveredEvent {
+  event: 'message_delivered';
+  message_id: number;
+  timestamp: string;
+  delivered_at: string;
+}
+
+export interface MessageSeenEvent {
+  event: 'message_seen';
+  message_id: number;
+  seen_at: string;
+}
+
 export interface UseWebSocketReturn {
   // Connection state
   isConnected: boolean;
@@ -76,6 +89,11 @@ export interface UseWebSocketReturn {
   onUserDisconnect?: (event: UserConnectionEvent) => void;
   onConnectedUsersUpdate?: (users: ConnectedUser[]) => void;
   onMessageSent?: (event: MessageSentEvent) => void;
+  onMessageDelivered?: (event: MessageDeliveredEvent) => void;
+  onMessageSeen?: (event: MessageSeenEvent) => void;
+  
+  // Methods for message status
+  markMessagesSeen: (fromUserId: string) => void;
 }
 
 export const useWebSocket = (): UseWebSocketReturn => {
@@ -95,6 +113,8 @@ export const useWebSocket = (): UseWebSocketReturn => {
   const onUserDisconnectRef = useRef<((event: UserConnectionEvent) => void) | undefined>(undefined);
   const onConnectedUsersUpdateRef = useRef<((users: ConnectedUser[]) => void) | undefined>(undefined);
   const onMessageSentRef = useRef<((event: MessageSentEvent) => void) | undefined>(undefined);
+  const onMessageDeliveredRef = useRef<((event: MessageDeliveredEvent) => void) | undefined>(undefined);
+  const onMessageSeenRef = useRef<((event: MessageSeenEvent) => void) | undefined>(undefined);
 
   const connect = useCallback((userId: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -128,6 +148,16 @@ export const useWebSocket = (): UseWebSocketReturn => {
           case 'message_sent':
             console.log('Message sent:', data);
             onMessageSentRef.current?.(data as unknown as MessageSentEvent);
+            break;
+            
+          case 'message_delivered':
+            console.log('Message delivered:', data);
+            onMessageDeliveredRef.current?.(data as unknown as MessageDeliveredEvent);
+            break;
+            
+          case 'message_seen':
+            console.log('Message seen:', data);
+            onMessageSeenRef.current?.(data as unknown as MessageSeenEvent);
             break;
             
           case 'typing':
@@ -226,6 +256,17 @@ export const useWebSocket = (): UseWebSocketReturn => {
     }
   }, []);
 
+  const markMessagesSeen = useCallback((fromUserId: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        event: 'mark_messages_seen',
+        from_user_id: fromUserId
+      }));
+    } else {
+      setError('WebSocket is not connected');
+    }
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -251,6 +292,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
     sendMessage,
     sendTyping,
     getConnectedUsers,
+    markMessagesSeen,
     
     // Event handlers (these will be set by the component using the hook)
     get onMessage() { return onMessageRef.current; },
@@ -269,6 +311,12 @@ export const useWebSocket = (): UseWebSocketReturn => {
     set onConnectedUsersUpdate(handler) { onConnectedUsersUpdateRef.current = handler; },
     
     get onMessageSent() { return onMessageSentRef.current; },
-    set onMessageSent(handler) { onMessageSentRef.current = handler; }
+    set onMessageSent(handler) { onMessageSentRef.current = handler; },
+    
+    get onMessageDelivered() { return onMessageDeliveredRef.current; },
+    set onMessageDelivered(handler) { onMessageDeliveredRef.current = handler; },
+    
+    get onMessageSeen() { return onMessageSeenRef.current; },
+    set onMessageSeen(handler) { onMessageSeenRef.current = handler; }
   };
 }; 

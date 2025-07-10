@@ -2,11 +2,11 @@
     "annotations": { "list": [] },
     "panels": [
       {
-        "type": "timeseries",
-        "title": "Messages by Day",
+        "type": "barchart",
+        "title": "Messages by 5-Minute Intervals",
         "targets": [
           {
-            "rawSql": "SELECT timestamp as \"time\", COUNT(*) as \"messages\" FROM messages GROUP BY 1 ORDER BY 1",
+            "rawSql": "SELECT date_trunc('minute', timestamp) + INTERVAL '5 min' * (EXTRACT(MINUTE FROM timestamp)::int / 5) as \"time\", COUNT(*) as \"messages\" FROM messages WHERE timestamp >= $__timeFrom() AND timestamp <= $__timeTo() GROUP BY 1 ORDER BY 1",
             "format": "time_series",
             "refId": "A"
           }
@@ -20,12 +20,33 @@
         "title": "Messages by User",
         "targets": [
           {
-            "rawSql": "SELECT from_id as \"User\", COUNT(*) as \"Messages\" FROM messages GROUP BY from_id ORDER BY COUNT(*) DESC",
+            "rawSql": "SELECT u.name as \"Name\", u.google_id as \"Google ID\", u.avatar_url as \"Avatar\", COUNT(*) as \"Messages\" FROM messages m JOIN users u ON m.from_id = u.id GROUP BY u.id, u.name, u.google_id, u.avatar_url ORDER BY COUNT(*) DESC",
             "format": "table",
             "refId": "B"
           }
         ],
         "datasource": { "type": "postgres", "uid": "postgres" },
+        "fieldConfig": { 
+          "defaults": {
+            "custom": {
+              "displayMode": "auto"
+            }
+          }, 
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Avatar"
+              },
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "image"
+                }
+              ]
+            }
+          ]
+        },
         "gridPos": { "h": 8, "w": 24, "x": 0, "y": 9 }
       }
     ],
@@ -33,6 +54,8 @@
     "version": 1,
     "title": "Chat Overview",
     "uid": "chat-overview",
-    "time": { "from": "now-30d", "to": "now" }
+    "time": { "from": "now-30d", "to": "now" },
+    "tags": ["provisioned"],
+    "templating": { "list": [] }
   }
   

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useWebSocket } from "../hooks/useWebSocket";
-import type { ChatMessage, MessageSentEvent } from "../hooks/useWebSocket";
+import type { ChatMessage, MessageSentEvent, MessageDeliveredEvent, MessageSeenEvent } from "../hooks/useWebSocket";
 
 interface WebSocketWrapperProps {
   children?: React.ReactNode;
@@ -20,11 +20,14 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
       to: number;
       message: string;
       timestamp: string;
+      delivered_at?: string | null;
+      seen_at?: string | null;
     }>
   >([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastMarkedChatRef = useRef<string | null>(null);
 
   const {
     isConnected,
@@ -35,6 +38,7 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
     disconnect,
     sendMessage,
     getConnectedUsers,
+    markMessagesSeen,
   } = webSocketHook;
 
   // Connect when user is available
@@ -56,10 +60,21 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
           to: parseInt(selectedChatUser || "0"),
           message: message.message,
           timestamp: message.timestamp,
+          delivered_at: null,
+          seen_at: null,
         },
       ]);
+      
+      // If the message is from the selected chat user and chat is open, mark as seen
+      if (message.from === selectedChatUser && selectedChatUser) {
+        console.log(`Auto-marking new message as seen from user ${selectedChatUser}`);
+        // Small delay to ensure message is added to state
+        setTimeout(() => {
+          markMessagesSeen(selectedChatUser);
+        }, 100);
+      }
     }
-  }, [selectedChatUser, user?.id]);
+  }, [selectedChatUser, user?.id, markMessagesSeen]);
 
   const handleMessageSent = useCallback( (event: MessageSentEvent) => {
     console.log("Message sent confirmed:", event);
@@ -72,19 +87,48 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
         to: parseInt(event.to),
         message: event.message,
         timestamp: event.timestamp,
+        delivered_at: null,
+        seen_at: null,
       },
     ]);
   }, [user?.id]);
 
-  // Set up the message handler
+  const handleMessageDelivered = useCallback((event: MessageDeliveredEvent) => {
+    console.log("Message delivered:", event);
+    setChatMessages((prev) => 
+      prev.map((msg) => 
+        msg.id === event.message_id 
+          ? { ...msg, delivered_at: event.delivered_at }
+          : msg
+      )
+    );
+  }, []);
+
+  const handleMessageSeen = useCallback((event: MessageSeenEvent) => {
+    console.log("Message seen:", event);
+    setChatMessages((prev) => 
+      prev.map((msg) => 
+        msg.id === event.message_id 
+          ? { ...msg, seen_at: event.seen_at }
+          : msg
+      )
+    );
+  }, []);
+
+  // Set up the message handlers
   useEffect(() => {
     webSocketHook.onMessage = handleMessage;
     webSocketHook.onMessageSent = handleMessageSent;
+    webSocketHook.onMessageDelivered = handleMessageDelivered;
+    webSocketHook.onMessageSeen = handleMessageSeen;
 
     return () => {
       webSocketHook.onMessage = undefined;
+      webSocketHook.onMessageSent = undefined;
+      webSocketHook.onMessageDelivered = undefined;
+      webSocketHook.onMessageSeen = undefined;
     };
-  }, [webSocketHook, handleMessage, handleMessageSent]);
+  }, [webSocketHook, handleMessage, handleMessageSent, handleMessageDelivered, handleMessageSeen]);
 
   const handleUserClick = async (userId: string) => {
     setSelectedChatUser(userId);
@@ -99,12 +143,14 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
         );
         if (response.ok) {
           const history = await response.json();
-          setChatMessages(history.map((msg: {id: number, from: number, to: number, message: string, timestamp: string}) => ({
+          setChatMessages(history.map((msg: {id: number, from: number, to: number, message: string, timestamp: string, delivered_at?: string | null, seen_at?: string | null}) => ({
             id: msg.id,
             from: msg.from,
             to: msg.to,
             message: msg.message,
             timestamp: msg.timestamp,
+            delivered_at: msg.delivered_at,
+            seen_at: msg.seen_at,
           })));
         }
       } catch (error) {
@@ -138,6 +184,55 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Generate message status indicator
+  const getMessageStatusIcon = (message: typeof chatMessages[0]) => {
+    if (message.from !== user?.id) {
+      return null; // Don't show status for received messages
+    }
+    
+    if (message.seen_at) {
+      return (
+        <span style={{ color: "#2196F3", fontSize: "12px", marginLeft: "5px" }}>
+          ✓✓
+        </span>
+      );
+    } else if (message.delivered_at) {
+      return (
+        <span style={{ color: "#666", fontSize: "12px", marginLeft: "5px" }}>
+          ✓✓
+        </span>
+      );
+    } else {
+      return (
+        <span style={{ color: "#666", fontSize: "12px", marginLeft: "5px" }}>
+          ✓
+        </span>
+      );
+    }
+  };
+
+  // Mark messages as seen only when opening a new chat (simplified)
+  useEffect(() => {
+    if (selectedChatUser && selectedChatUser !== lastMarkedChatRef.current) {
+      lastMarkedChatRef.current = selectedChatUser;
+      
+      // Delay to ensure messages are loaded from history
+      const timeoutId = setTimeout(() => {
+        console.log(`Marking messages as seen for user ${selectedChatUser}`);
+        markMessagesSeen(selectedChatUser);
+      }, 1000); // Increased delay to ensure history is fully loaded
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedChatUser]); // Only selectedChatUser as dependency
+
+  // Reset the ref when chat is closed
+  useEffect(() => {
+    if (!selectedChatUser) {
+      lastMarkedChatRef.current = null;
+    }
+  }, [selectedChatUser]);
 
   // Auto-scroll when messages change
   useEffect(() => {
@@ -418,6 +513,7 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
                     }}
                   >
                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {getMessageStatusIcon(msg)}
                   </div>
                 </div>
                ))
