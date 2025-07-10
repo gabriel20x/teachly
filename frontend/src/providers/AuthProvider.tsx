@@ -67,7 +67,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential }),
       });
-      console.log("credential", credential);
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       if (res.ok) {
@@ -82,8 +81,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      throw error;
+      logout();
       setIsLoading(false);
+      throw error;
     }
   };
 

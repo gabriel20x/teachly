@@ -19,7 +19,7 @@ export const SentMessageBubble = ({ message, time, status }: SentMessageBubblePr
         <p className="text-base">{message}</p>
         <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
           <span className={`message-status-${status} text-small`}>
-            {status === 'read' ? '✓✓' : status === 'delivered' ? '✓' : '•'} {time}
+            {status === 'read' ? '✓✓' : status === 'delivered' ? '✓' : '•'} {new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
       </div>

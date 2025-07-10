@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { ChatPage } from './pages/ChatPage';
 import { ThemePreviewPage } from './pages/ThemePreviewPage';
+import { WebSocketProvider } from './providers/WebSocketProvider';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -47,7 +48,9 @@ const AppRoutes = () => {
         } />
         <Route path="/chat" element={
           <ProtectedRoute>
-            <ChatPage />
+            <WebSocketProvider>
+              <ChatPage />
+            </WebSocketProvider>
           </ProtectedRoute>
         } />
         <Route path="/theme" element={<ThemePreviewPage />} />
@@ -60,7 +63,7 @@ const AppRoutes = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+        <AppRoutes />
     </AuthProvider>
   );
 }

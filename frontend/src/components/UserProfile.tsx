@@ -1,8 +1,10 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 
 export const UserProfile: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { theme } = useTheme();
 
   if (!user) {
     return null;
@@ -11,40 +13,22 @@ export const UserProfile: React.FC = () => {
   return (
     <div style={{ 
       display: 'flex', 
-      alignItems: 'center', 
+      flex:1,
       gap: '1rem',
-      padding: '1rem',
-      border: '1px solid #e0e0e0',
-      borderRadius: '8px',
-      backgroundColor: '#f9f9f9',
-      color: 'black'
+      alignItems: 'center',
     }}>
       <img 
         src={user.avatar_url} 
         alt={`${user.name}'s avatar`} 
         style={{ 
-          width: '50px', 
-          height: '50px', 
+          width: '4rem', 
+          height: '4rem', 
           borderRadius: '50%',
           objectFit: 'cover'
         }} 
       />
       <div>
-        <h3 style={{ margin: '0 0 0.5rem 0' }}>Welcome, {user.name}!</h3>
-        <button 
-          onClick={logout}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#dc3545',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px'
-          }}
-        >
-          Logout
-        </button>
+        <h4>{user.name}</h4>
       </div>
     </div>
   );
