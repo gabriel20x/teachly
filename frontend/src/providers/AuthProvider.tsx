@@ -5,6 +5,7 @@ import {
   type User,
   type AuthContextType,
 } from "../contexts/AuthContext";
+import { LoadingScreen } from "../components/LoadingScreen";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -20,7 +21,11 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // Try to restore user from localStorage on mount
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const initializeAuth = () => {
@@ -32,19 +37,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       auto_select: true,
     });
 
-    // Try to restore session automatically
-    window.google.accounts.id.prompt(
-      (notification: {
-        isNotDisplayed: () => boolean;
-        isSkippedMoment: () => boolean;
-      }) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // No session found, user will need to sign in manually
-          console.log("No existing session found");
-          setIsLoading(false);
-        }
+    // Check if user is already logged in
+    if (user) {
+      // User exists in localStorage, try to validate with Google
+      const savedCredential = localStorage.getItem("google_credential");
+      if (savedCredential) {
+        login(savedCredential);
+      } else {
+        // No credential found, clear user
+        localStorage.removeItem("user");
+        setUser(null);
+        setIsLoading(false);
       }
-    );
+    } else {
+      // No user found, show login
+      setIsLoading(false);
+    }
   };
 
   const handleCredentialResponse = async (response: { credential: string }) => {
@@ -59,12 +67,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential }),
       });
+      console.log("credential", credential);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       if (res.ok) {
         const userData: User = await res.json();
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("google_credential", credential);
+        setIsLoading(false);
       } else {
         console.error("Login failed");
         throw new Error("Login failed");
@@ -72,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Login error:", error);
       throw error;
+      setIsLoading(false);
     }
   };
 
@@ -116,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   
   if (isLoading) {
-    return <></>;
+    return <LoadingScreen message="Checking authentication..." />;
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
