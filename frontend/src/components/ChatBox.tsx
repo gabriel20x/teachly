@@ -1,6 +1,6 @@
 import { useWebSocketContext } from "../hooks/useWebSocketContext";
 import { useAuth } from "../hooks/useAuth";
-import { useRef } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { SentMessageBubble } from "./chat/SentMessageBubble";
 import { ReceivedMessageBubble } from "./chat/ReceivedMessageBubble";
 import { Avatar } from "./Avatar";
@@ -13,10 +13,14 @@ export const ChatBox = () => {
     newMessage,
     setNewMessage,
     sendMessage,
+    sendTyping,
+    markMessagesSeen,
     isConnected,
     connectedUsers,
     isLoadingHistory,
     usersTyping,
+    isCurrentlyTyping,
+    setIsCurrentlyTyping,
   } = useWebSocketContext();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,9 +28,45 @@ export const ChatBox = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedChatUser && newMessage.trim()) {
+      // Send typing stop when message is sent (only if currently typing)
+      if (isCurrentlyTyping) {
+        sendTyping(selectedChatUser.user_id, false);
+        setIsCurrentlyTyping(false);
+      }
+      
       sendMessage(selectedChatUser.user_id, newMessage);
     }
   };
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    // Send typing indicator only when state changes (like WebSocketWrapper)
+    if (selectedChatUser) {
+      const shouldBeTyping = value.trim().length > 0;
+      
+      // Only send event if the typing state has changed
+      if (shouldBeTyping !== isCurrentlyTyping) {
+        sendTyping(selectedChatUser.user_id, shouldBeTyping);
+        setIsCurrentlyTyping(shouldBeTyping);
+      }
+    }
+  }, [selectedChatUser, setNewMessage, sendTyping, isCurrentlyTyping]);
+
+  // Mark messages as seen when chat is opened or new messages arrive
+  useEffect(() => {
+    if (selectedChatUser && chatMessages.length > 0) {
+      const unreadMessages = chatMessages.filter(msg => 
+        msg.from !== user?.id && !msg.seen_at
+      );
+      if (unreadMessages.length > 0) {
+        markMessagesSeen(selectedChatUser.user_id);
+      }
+    }
+  }, [selectedChatUser, chatMessages, user?.id, markMessagesSeen]);
+
+
 
   return (
     <div
@@ -129,7 +169,7 @@ export const ChatBox = () => {
           <input
             type="text"
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             className="rounded text-base"
             style={{
               flex: 1,

@@ -67,14 +67,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         },
       ]);
       
-      // If the message is from the selected chat user and chat is open, mark as seen
-      if (message.from === selectedChatUser?.user_id && selectedChatUser) {
-        console.log(`Auto-marking new message as seen from user ${selectedChatUser.user_id}`);
-        // Small delay to ensure message is added to state
-        setTimeout(() => {
-          markMessagesSeen(selectedChatUser.user_id);
-        }, 100);
-      }
+      // Don't automatically mark messages as seen - let the UI component handle this
+      // This allows for proper unread message functionality
     }
   }, [selectedChatUser, user?.id, markMessagesSeen]);
 
@@ -251,6 +245,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     // Chat management
     selectChatUser,
     setNewMessage,
+    setIsCurrentlyTyping,
     closeChat,
     
     // Event handlers (exposed for external use)

@@ -48,6 +48,7 @@ export interface WebSocketContextType {
   // Chat management
   selectChatUser: (connectedUser: ConnectedUser) => Promise<void>;
   setNewMessage: (message: string) => void;
+  setIsCurrentlyTyping: (isTyping: boolean) => void;
   closeChat: () => void;
   
   // Event handlers
