@@ -1,11 +1,17 @@
 import time
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from app.db.database import Base, engine
 from app.auth import routes as auth_routes
 from fastapi.middleware.cors import CORSMiddleware
 from app.chat import routes as chat_routes
 from sqlalchemy.exc import OperationalError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,6 +38,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Configure rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.include_router(auth_routes.router)
 app.include_router(chat_routes.chat_router)
 
@@ -44,5 +54,6 @@ app.add_middleware(
 )
 
 @app.get("/health")
-def health_check():
+@limiter.limit("10/minute")
+def health_check(request: Request):
     return {"status": "ok"}

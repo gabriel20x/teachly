@@ -11,6 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/dompurify": "^3.0.5",
+    "@types/linkify-it": "^5.0.0",
+    "dompurify": "^3.2.6",
+    "linkify-it": "^5.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

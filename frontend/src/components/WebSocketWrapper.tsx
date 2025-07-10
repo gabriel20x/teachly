@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useWebSocket } from "../hooks/useWebSocket";
 import type { ChatMessage, MessageSentEvent, MessageDeliveredEvent, MessageSeenEvent } from "../hooks/useWebSocket";
+import { LinkWarningModal } from "./LinkWarningModal";
+import { validateMessageInput, renderSafeMessage } from "../utils/messageSecurity";
 
 interface WebSocketWrapperProps {
   children?: React.ReactNode;
@@ -28,6 +30,10 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [usersTyping, setUsersTyping] = useState<Set<string>>(new Set());
   const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
+  const [linkWarningModal, setLinkWarningModal] = useState<{
+    isOpen: boolean;
+    url: string;
+  }>({ isOpen: false, url: "" });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMarkedChatRef = useRef<string | null>(null);
 
@@ -186,16 +192,44 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
 
   const handleSendMessage = () => {
     if (selectedChatUser && newMessage.trim()) {
+      // Validate and sanitize the message
+      const validation = validateMessageInput(newMessage);
+      
+      if (!validation.isValid) {
+        console.error("Message validation failed:", validation.errors);
+        // You could show an error toast here
+        return;
+      }
+
       // Send typing stop when message is sent (only if currently typing)
       if (isCurrentlyTyping) {
         webSocketHook.sendTyping(selectedChatUser, false);
         setIsCurrentlyTyping(false);
       }
       
-      sendMessage(selectedChatUser, newMessage.trim());
+      sendMessage(selectedChatUser, validation.sanitizedMessage);
       console.log("time", new Date().toISOString());
       setNewMessage("");
     }
+  };
+
+  const handleLinkClick = (url: string, isExternal: boolean) => {
+    if (isExternal) {
+      // Show warning modal for external links
+      setLinkWarningModal({ isOpen: true, url });
+    } else {
+      // Direct navigation for internal links
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleLinkWarningClose = () => {
+    setLinkWarningModal({ isOpen: false, url: "" });
+  };
+
+  const handleLinkWarningConfirm = () => {
+    window.open(linkWarningModal.url, '_blank', 'noopener,noreferrer');
+    setLinkWarningModal({ isOpen: false, url: "" });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -557,7 +591,7 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
                       wordWrap: "break-word",
                     }}
                   >
-                    {msg.message}
+                    {renderSafeMessage(msg.message, handleLinkClick)}
                   </div>
                   <div
                     style={{
@@ -634,6 +668,14 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
           </div>
         </div>
       )}
+
+      {/* Link Warning Modal */}
+      <LinkWarningModal
+        isOpen={linkWarningModal.isOpen}
+        url={linkWarningModal.url}
+        onClose={handleLinkWarningClose}
+        onConfirm={handleLinkWarningConfirm}
+      />
 
       {/* Render children if provided */}
       {children}
