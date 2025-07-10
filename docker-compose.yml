@@ -1,6 +1,18 @@
-version: '3.8'
-
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: 153591155427-vid4gkhrfgvm4pmqr5tgrdi1uublja7q.apps.googleusercontent.com
+        VITE_API_URL: http://localhost:8000
+    container_name: teachly-frontend
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
   backend:
     build:
       context: ./backend
@@ -9,6 +21,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/chatdb
     env_file:
       - .env
     depends_on:
