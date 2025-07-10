@@ -26,6 +26,8 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
   >([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [usersTyping, setUsersTyping] = useState<Set<string>>(new Set());
+  const [isCurrentlyTyping, setIsCurrentlyTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastMarkedChatRef = useRef<string | null>(null);
 
@@ -115,25 +117,46 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
     );
   }, []);
 
+  const handleTyping = useCallback((event: { from: string; is_typing: boolean }) => {
+    console.log("Typing event:", event);
+    setUsersTyping((prev) => {
+      const newTyping = new Set(prev);
+      if (event.is_typing) {
+        newTyping.add(event.from);
+      } else {
+        newTyping.delete(event.from);
+      }
+      return newTyping;
+    });
+  }, []);
+
   // Set up the message handlers
   useEffect(() => {
     webSocketHook.onMessage = handleMessage;
     webSocketHook.onMessageSent = handleMessageSent;
     webSocketHook.onMessageDelivered = handleMessageDelivered;
     webSocketHook.onMessageSeen = handleMessageSeen;
+    webSocketHook.onTyping = handleTyping;
 
     return () => {
       webSocketHook.onMessage = undefined;
       webSocketHook.onMessageSent = undefined;
       webSocketHook.onMessageDelivered = undefined;
       webSocketHook.onMessageSeen = undefined;
+      webSocketHook.onTyping = undefined;
     };
-  }, [webSocketHook, handleMessage, handleMessageSent, handleMessageDelivered, handleMessageSeen]);
+  }, [webSocketHook, handleMessage, handleMessageSent, handleMessageDelivered, handleMessageSeen, handleTyping]);
 
   const handleUserClick = async (userId: string) => {
+    // Send typing stop to previous user if currently typing
+    if (selectedChatUser && isCurrentlyTyping && selectedChatUser !== userId) {
+      webSocketHook.sendTyping(selectedChatUser, false);
+    }
+    
     setSelectedChatUser(userId);
     setChatMessages([]);
     setIsLoadingHistory(true);
+    setIsCurrentlyTyping(false);
     
     // Load chat history
     if (user?.id) {
@@ -163,6 +186,12 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
 
   const handleSendMessage = () => {
     if (selectedChatUser && newMessage.trim()) {
+      // Send typing stop when message is sent (only if currently typing)
+      if (isCurrentlyTyping) {
+        webSocketHook.sendTyping(selectedChatUser, false);
+        setIsCurrentlyTyping(false);
+      }
+      
       sendMessage(selectedChatUser, newMessage.trim());
       console.log("time", new Date().toISOString());
       setNewMessage("");
@@ -176,9 +205,36 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    
+    // Send typing indicator only when state changes
+    if (selectedChatUser) {
+      const shouldBeTyping = value.trim().length > 0;
+      
+      // Only send event if the typing state has changed
+      if (shouldBeTyping !== isCurrentlyTyping) {
+        webSocketHook.sendTyping(selectedChatUser, shouldBeTyping);
+        setIsCurrentlyTyping(shouldBeTyping);
+      }
+    }
+  };
+
+
+
+
+
   const closeChat = () => {
+    // Send typing stop when closing chat (only if currently typing)
+    if (selectedChatUser && isCurrentlyTyping) {
+      webSocketHook.sendTyping(selectedChatUser, false);
+    }
+    
     setSelectedChatUser(null);
     setChatMessages([]);
+    setUsersTyping(new Set());
+    setIsCurrentlyTyping(false);
   };
 
   const scrollToBottom = () => {
@@ -521,6 +577,22 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
              <div ref={messagesEndRef} />
            </div>
 
+          {/* Typing Indicator */}
+          {selectedChatUser && usersTyping.has(selectedChatUser) && (
+            <div
+              style={{
+                padding: "8px 15px",
+                fontSize: "12px",
+                color: "#666",
+                fontStyle: "italic",
+                borderTop: "1px solid #f0f0f0",
+                backgroundColor: "#f9f9f9",
+              }}
+            >
+              {connectedUsers.find((u) => u.user_id === selectedChatUser)?.name || "User"} is typing...
+            </div>
+          )}
+
           {/* Message Input */}
           <div
             style={{
@@ -533,7 +605,7 @@ export const WebSocketWrapper: React.FC<WebSocketWrapperProps> = ({
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
               style={{
