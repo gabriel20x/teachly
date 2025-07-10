@@ -5,6 +5,8 @@ import type { ChatMessage, MessageSentEvent, MessageDeliveredEvent, MessageSeenE
 import { validateMessageInput } from "../utils/messageSecurity";
 import { WebSocketContext } from "../contexts/WebSocketContext";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 interface WebSocketProviderProps {
   children: React.ReactNode;
 }
@@ -165,7 +167,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     if (user?.id) {
       try {
         const response = await fetch(
-          `http://localhost:8000/history/${user.id}/${connectedUser.user_id}`
+          `${API_URL}/history/${user.id}/${connectedUser.user_id}`
         );
         if (response.ok) {
           const history = await response.json();

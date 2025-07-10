@@ -7,6 +7,8 @@ import {
 } from "../contexts/AuthContext";
 import { LoadingScreen } from "../components/LoadingScreen";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 declare global {
@@ -85,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credential: string) => {
     try {
       setIsLoading(true);
-      const res = await fetch("http://localhost:8000/auth/login", {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential }),

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const WS_URL = API_URL.replace(/^https?:\/\//, '');
+
 export interface ConnectedUser {
   user_id: string;
   id: number;
@@ -125,7 +128,7 @@ export const useWebSocket = (): UseWebSocketReturn => {
     setError(null);
     currentUserId.current = userId;
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/chat/${userId}`);
+    const ws = new WebSocket(`ws://${WS_URL}/ws/chat/${userId}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
