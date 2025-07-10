@@ -203,6 +203,11 @@ textarea:hover {
   outline-offset: 2px;
 }
 
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes pulse {
   0%, 100% { opacity: 1; }

@@ -28,6 +28,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
+  const cleanupAuthCache = () => {
+    // Clear all authentication-related data
+    localStorage.removeItem("user");
+    localStorage.removeItem("google_credential");
+    setUser(null);
+    
+    // Disable Google auto-select to prevent automatic re-login attempts
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.disableAutoSelect();
+    }
+  };
+
   const initializeAuth = () => {
     // Initialize Google Identity Services
     window.google.accounts.id.initialize({
@@ -42,11 +54,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // User exists in localStorage, try to validate with Google
       const savedCredential = localStorage.getItem("google_credential");
       if (savedCredential) {
-        login(savedCredential);
+        login(savedCredential).catch((error) => {
+          console.error("Auto-login failed:", error);
+          // Clean up cache and show login screen
+          cleanupAuthCache();
+          setIsLoading(false);
+        });
       } else {
         // No credential found, clear user
-        localStorage.removeItem("user");
-        setUser(null);
+        cleanupAuthCache();
         setIsLoading(false);
       }
     } else {
@@ -56,12 +72,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const handleCredentialResponse = async (response: { credential: string }) => {
-    await login(response.credential);
-    setIsLoading(false);
+    try {
+      await login(response.credential);
+    } catch (error) {
+      console.error("Credential response login failed:", error);
+      // Ensure clean state on failure
+      cleanupAuthCache();
+      setIsLoading(false);
+    }
   };
 
   const login = async (credential: string) => {
     try {
+      setIsLoading(true);
       const res = await fetch("http://localhost:8000/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,26 +99,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.setItem("google_credential", credential);
         setIsLoading(false);
       } else {
-        console.error("Login failed");
-        throw new Error("Login failed");
+        console.error("Login failed with status:", res.status);
+        // Clean up any existing cache on server error
+        cleanupAuthCache();
+        throw new Error(`Login failed: ${res.status} ${res.statusText}`);
       }
     } catch (error) {
       console.error("Login error:", error);
-      logout();
+      // Ensure complete cleanup on any error
+      cleanupAuthCache();
       setIsLoading(false);
       throw error;
     }
   };
 
   const logout = () => {
-    if (user?.google_id) {
+    if (user?.google_id && window.google?.accounts?.id) {
       // Revoke Google session
       window.google.accounts.id.disableAutoSelect();
       window.google.accounts.id.revoke(user.google_id, () => {
         // Clear local storage
-        localStorage.removeItem("user");
-        localStorage.removeItem("google_credential");
-        setUser(null);
+        cleanupAuthCache();
 
         // Re-enable auto-select for next session
         window.google.accounts.id.initialize({
@@ -106,10 +130,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       });
     } else {
-      // Fallback if no google_id
-      localStorage.removeItem("user");
-      localStorage.removeItem("google_credential");
-      setUser(null);
+      // Fallback if no google_id or Google API not available
+      cleanupAuthCache();
     }
   };
 

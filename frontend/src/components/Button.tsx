@@ -1,11 +1,11 @@
 import React from "react";
 
-interface ButtonProps {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
-export const Button = ({ children, onClick }: ButtonProps) => {
+export const Button = ({ children, onClick, ...rest }: ButtonProps) => {
   return (
     <button
       onClick={onClick}
@@ -19,6 +19,7 @@ export const Button = ({ children, onClick }: ButtonProps) => {
         height: "fit-content",
         alignSelf: "center",
       }}
+      {...rest}
     >
       {children}
     </button>

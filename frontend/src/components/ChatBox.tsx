@@ -6,6 +6,7 @@ import { ReceivedMessageBubble } from "./chat/ReceivedMessageBubble";
 import { Avatar } from "./Avatar";
 import { LinkWarningModal } from "./LinkWarningModal";
 import { TypingIndicator } from "./chat/TypingIndicator";
+import { Button } from "./Button";
 
 export const ChatBox = () => {
   const { user } = useAuth();
@@ -219,9 +220,9 @@ export const ChatBox = () => {
             style={{
               flex: 1,
               padding: "1rem",
-              backgroundColor: "var(--bg-tertiary)",
+              backgroundColor: "white",
               border: "1px solid var(--border)",
-              color: "var(--text-primary)",
+              color: "black",
               outline: "none",
             }}
             placeholder={
@@ -231,24 +232,12 @@ export const ChatBox = () => {
             }
             disabled={!selectedChatUser}
           />
-          <button
+          <Button
             type="submit"
-            className="rounded text-base font-medium shadow-light transition"
-            style={{
-              padding: "1rem 2rem",
-              backgroundColor: selectedChatUser
-                ? "var(--accent-primary)"
-                : "var(--bg-tertiary)",
-              color: selectedChatUser
-                ? "var(--text-inverted)"
-                : "var(--text-muted)",
-              border: "none",
-              cursor: selectedChatUser ? "pointer" : "not-allowed",
-            }}
-            disabled={!selectedChatUser}
+            disabled={!selectedChatUser || newMessage.trim() === ""}
           >
             Send
-          </button>
+          </Button>
         </form>
       </div>
 
