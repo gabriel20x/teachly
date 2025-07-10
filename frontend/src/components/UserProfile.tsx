@@ -1,10 +1,8 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useTheme } from '../hooks/useTheme';
 
 export const UserProfile: React.FC = () => {
   const { user } = useAuth();
-  const { theme } = useTheme();
 
   if (!user) {
     return null;

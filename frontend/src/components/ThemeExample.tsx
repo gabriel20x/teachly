@@ -1,6 +1,5 @@
 import React from "react";
 import { useTheme } from "../hooks/useTheme";
-import { ChatContainer } from "./chat/ChatContainer";
 import { SentMessageBubble } from "./chat/SentMessageBubble";
 import { ReceivedMessageBubble } from "./chat/ReceivedMessageBubble";
 import { TypingIndicator } from "./chat/TypingIndicator";
@@ -196,7 +195,7 @@ export const ThemeExample: React.FC = () => {
         💬 Bubble Chat:
       </h3>
       
-      <ChatContainer>
+      <div className="rounded border" style={{ padding: "1.5rem", backgroundColor: "var(--bg-secondary)" }}>
         <SentMessageBubble
           message="This new palette looks incredible! 🎨"
           time="14:23"
@@ -210,7 +209,7 @@ export const ThemeExample: React.FC = () => {
 
         {/* Typing indicator */}
         <TypingIndicator name="Ana" />
-      </ChatContainer>
+      </div>
     </div>
   );
 };

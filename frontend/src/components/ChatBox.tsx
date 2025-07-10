@@ -5,6 +5,7 @@ import { SentMessageBubble } from "./chat/SentMessageBubble";
 import { ReceivedMessageBubble } from "./chat/ReceivedMessageBubble";
 import { Avatar } from "./Avatar";
 import { LinkWarningModal } from "./LinkWarningModal";
+import { TypingIndicator } from "./chat/TypingIndicator";
 
 export const ChatBox = () => {
   const { user } = useAuth();
@@ -38,26 +39,29 @@ export const ChatBox = () => {
         sendTyping(selectedChatUser.user_id, false);
         setIsCurrentlyTyping(false);
       }
-      
+
       sendMessage(selectedChatUser.user_id, newMessage);
     }
   };
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setNewMessage(value);
-    
-    // Send typing indicator only when state changes (like WebSocketWrapper)
-    if (selectedChatUser) {
-      const shouldBeTyping = value.trim().length > 0;
-      
-      // Only send event if the typing state has changed
-      if (shouldBeTyping !== isCurrentlyTyping) {
-        sendTyping(selectedChatUser.user_id, shouldBeTyping);
-        setIsCurrentlyTyping(shouldBeTyping);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setNewMessage(value);
+
+      // Send typing indicator only when state changes (like WebSocketWrapper)
+      if (selectedChatUser) {
+        const shouldBeTyping = value.trim().length > 0;
+
+        // Only send event if the typing state has changed
+        if (shouldBeTyping !== isCurrentlyTyping) {
+          sendTyping(selectedChatUser.user_id, shouldBeTyping);
+          setIsCurrentlyTyping(shouldBeTyping);
+        }
       }
-    }
-  }, [selectedChatUser, setNewMessage, sendTyping, isCurrentlyTyping]);
+    },
+    [selectedChatUser, setNewMessage, sendTyping, isCurrentlyTyping]
+  );
 
   const handleLinkClick = (url: string, isExternal: boolean) => {
     if (isExternal) {
@@ -65,7 +69,7 @@ export const ChatBox = () => {
       setLinkWarningModal({ isOpen: true, url });
     } else {
       // Direct navigation for internal links
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -74,15 +78,15 @@ export const ChatBox = () => {
   };
 
   const handleLinkWarningConfirm = () => {
-    window.open(linkWarningModal.url, '_blank', 'noopener,noreferrer');
+    window.open(linkWarningModal.url, "_blank", "noopener,noreferrer");
     setLinkWarningModal({ isOpen: false, url: "" });
   };
 
   // Mark messages as seen when chat is opened or new messages arrive
   useEffect(() => {
     if (selectedChatUser && chatMessages.length > 0) {
-      const unreadMessages = chatMessages.filter(msg => 
-        msg.from !== user?.id && !msg.seen_at
+      const unreadMessages = chatMessages.filter(
+        (msg) => msg.from !== user?.id && !msg.seen_at
       );
       if (unreadMessages.length > 0) {
         markMessagesSeen(selectedChatUser.user_id);
@@ -90,7 +94,12 @@ export const ChatBox = () => {
     }
   }, [selectedChatUser, chatMessages, user?.id, markMessagesSeen]);
 
-
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
 
   return (
     <div
@@ -114,9 +123,17 @@ export const ChatBox = () => {
           gap: "2.4rem",
         }}
       >
-        <Avatar src={selectedChatUser?.avatar_url || ""} alt={selectedChatUser?.name || ""} size={48} />
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          <h1 className="text-large font-bold text-accent">{selectedChatUser?.name}</h1>
+        <Avatar
+          src={selectedChatUser?.avatar_url || ""}
+          alt={selectedChatUser?.name || ""}
+          size={48}
+        />
+        <div
+          style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}
+        >
+          <h1 className="text-large font-bold text-accent">
+            {selectedChatUser?.name}
+          </h1>
           <p className="text-small text-success">
             {isConnected ? "Online" : "Connecting..."}
           </p>
@@ -171,10 +188,12 @@ export const ChatBox = () => {
           )}
 
         {selectedChatUser && usersTyping.has(selectedChatUser.user_id) && (
-          <div className="text-small text-muted italic">
-            {connectedUsers.find((u) => u.user_id === selectedChatUser.user_id)?.name}{" "}
-            is typing...
-          </div>
+          <TypingIndicator
+            name={
+              connectedUsers.find((u) => u.user_id === selectedChatUser.user_id)
+                ?.name || ""
+            }
+          />
         )}
 
         <div ref={messagesEndRef} />
