@@ -1,0 +1,231 @@
+/* ===== GOOGLE FONTS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* ===== RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Base font size for easy rem calculations */
+  font-size: 10px;
+  
+  /* Font family */
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  
+  /* Shadows */
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
+  /* Text sizes */
+  --text-small: 1.2rem;   /* 12px */
+  --text-base: 1.4rem;    /* 14px */
+  --text-large: 1.6rem;   /* 16px */
+  
+  /* Border radius */
+  --radius: 0.8rem;
+  --radius-small: 0.4rem;
+  
+  /* Transitions */
+  --transition: all 0.2s ease;
+}
+
+/* ===== LIGHT THEME (default) ===== */
+:root {
+  --bg-primary: #F7F7FA;        /* Soft eggshell white */
+  --bg-secondary: #FFFFFF;      /* Clean white for cards/chat */
+  --bg-tertiary: #EFEFF2;       /* Input background */
+  
+  --text-primary: #1B202D;      /* Rich black text */
+  --text-secondary: #292F3F;    /* Soft grey */
+  --text-muted: #7A8194;        /* Muted grey */
+  --text-inverted: #F1F1F3; 
+  
+  --border: #E0E0E0;            /* Light grey border */
+  --border-light: #EFEFF2;      /* Subtle border */
+  
+  /* Accent colors */
+  --accent-primary: #1B202D;    /* Metallic gold */
+  --accent-secondary: #3A44DB;  /* Elegant tech-blue */
+  
+  /* Chat specific */
+  --chat-bubble-sent: #DCF8C6  ;      /* Gold for sent messages */
+  --chat-bubble-received: #FFFFFF;  /* White for received */
+  --chat-text-sent: #1B1B1E;        /* Dark text on gold */
+  --chat-text-received: #1B1B1E;    /* Dark text on white */
+  
+  /* Message status */
+  --message-read: #27AE60;      /* Softened green */
+  --message-delivered: #555A60; /* Soft grey */
+  --message-pending: #D4AF37;   /* Gold for pending */
+  
+  /* Status colors */
+  --success: #27AE60;           /* Softened green */
+  --warning: #D4AF37;           /* Gold warning */
+  --error: #C0392B;             /* Muted red */
+  --info: #3A44DB;              /* Tech-blue */
+  
+  /* Avatar */
+  --avatar-border: #E0E0E0;     /* Light grey ring */
+}
+
+/* ===== DARK THEME ===== */
+[data-theme="dark"] {
+  --bg-primary: #1B202D;        /* Deep graphite black */
+  --bg-secondary: #292F3F;      /* Elegant layered dark tone */
+  --bg-tertiary: #7A8194;       /* Input background */
+  
+  --text-primary: #F1F1F3;      /* Soft off-white */
+  --text-secondary: #A0A0A5;    /* Subtle grey */
+  --text-muted: #555A60;        /* Muted grey */
+  --text-inverted: #1B202D; 
+  
+  --border: #444444;            /* Subtle frame */
+  --border-light: rgba(255, 255, 255, 0.08); /* Very subtle border */
+  
+  /* Accent colors */
+  --accent-primary: #ffffff;    /* Metallic gold */
+  --accent-secondary: #5DDDDD;  /* Sophisticated tech-blue */
+  
+  /* Chat specific */
+  --chat-bubble-sent: #056162;      /* Gold for sent messages */
+  --chat-bubble-received: #1B202D;  /* Dark card for received */
+  --chat-text-sent: #F1F1F3;        /* Dark text on gold */
+  --chat-text-received: #F1F1F3;    /* Light text on dark */
+  
+  /* Message status */
+  --message-read: #2ECC71;      /* Minimal green */
+  --message-delivered: #A0A0A5; /* Subtle grey */
+  --message-pending: #D4AF37;   /* Gold for pending */
+  
+  /* Status colors */
+  --success: #2ECC71;           /* Minimal green */
+  --warning: #D4AF37;           /* Gold warning */
+  --error: #E74C3C;             /* Error red */
+  --info: #5DDDDD;              /* Tech-blue */
+  
+  /* Avatar */
+  --avatar-border: rgba(255, 255, 255, 0.08); /* Very subtle frame */
+  
+  /* Dark theme shadows */
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== BASE STYLES ===== */
+html {
+  font-size: 10px; /* Base for rem calculations */
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  font-family: inherit;
+  min-height: 100vh;
+  transition: var(--transition);
+}
+
+/* ===== TYPOGRAPHY ===== */
+.text-small { font-size: var(--text-small); }
+.text-base { font-size: var(--text-base); }
+.text-large { font-size: var(--text-large); }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+/* Font weights for Poppins */
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+/* ===== ACCENT COLORS ===== */
+.text-accent { color: var(--accent-primary); }
+.text-accent-secondary { color: var(--accent-secondary); }
+.bg-accent { background-color: var(--accent-primary); }
+.bg-accent-secondary { background-color: var(--accent-secondary); }
+
+/* ===== STATUS COLORS ===== */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-info { color: var(--info); }
+
+.bg-success { background-color: var(--success); }
+.bg-warning { background-color: var(--warning); }
+.bg-error { background-color: var(--error); }
+.bg-info { background-color: var(--info); }
+
+/* ===== SHADOWS ===== */
+.shadow-light { box-shadow: var(--shadow-light); }
+.shadow-medium { box-shadow: var(--shadow-medium); }
+
+/* ===== CHAT SPECIFIC ===== */
+.message-status-read { color: var(--message-read); }
+.message-status-delivered { color: var(--message-delivered); }
+.message-status-pending { color: var(--message-pending); }
+
+.avatar-border { border-color: var(--avatar-border); }
+
+/* ===== UTILITY CLASSES ===== */
+.rounded { border-radius: var(--radius); }
+.rounded-small { border-radius: var(--radius-small); }
+
+.border { border: 1px solid var(--border); }
+.border-light { border: 1px solid var(--border-light); }
+
+.transition { transition: var(--transition); }
+
+/* ===== FOCUS STYLES ===== */
+button:focus,
+input:focus,
+textarea:focus {
+  outline: 2px solid var(--chat-bubble-sent);
+  outline-offset: 2px;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes loadingPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 0.6rem;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-small);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+} 

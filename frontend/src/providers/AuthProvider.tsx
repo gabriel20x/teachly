@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const initializeAuth = async () => {
+  const initializeAuth = () => {
     // Initialize Google Identity Services
     window.google.accounts.id.initialize({
       client_id: clientId,
@@ -113,6 +113,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     initializeAuth,
   };
+
+  
+  if (isLoading) {
+    return <></>;
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

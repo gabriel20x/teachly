@@ -1,38 +1,20 @@
-import { AuthProvider } from "./providers/AuthProvider";
-import { UserProfile } from "./components/UserProfile";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { WebSocketWrapper } from "./components/WebSocketWrapper";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './providers/AuthProvider';
+import { LoginPage } from './pages/LoginPage';
+import { ChatPage } from './pages/ChatPage';
+import { ThemePreviewPage } from './pages/ThemePreviewPage';
 
-function AppContent() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px' }}>
-      <div style={{ width: '100%', maxWidth: '1200px' }}>
-        <h1>Teachly Chat App</h1>
-        <ProtectedRoute>
-          <div style={{ marginTop: '2rem' }}>
-            <UserProfile />
-            <div style={{ marginTop: '2rem' }}>
-              <h2>Welcome to your dashboard!</h2>
-              <p>This content is only visible to authenticated users.</p>
-            </div>
-          </div>
-          
-          {/* WebSocket Wrapper with Connected Users */}
-          <div style={{ marginTop: '2rem' }}>
-            <WebSocketWrapper />
-          </div>
-        </ProtectedRoute>
-      </div>
-    </div>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/theme" element={<ThemePreviewPage />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
     </AuthProvider>
   );
 }
-
-export default App;
